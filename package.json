@@ -1,0 +1,13 @@
+{
+  "name": "open-files",
+  "version": "0.1.0",
+  "description": "List open files for processes",
+  "main": "index.js",
+  "repository": "https://github.com/Shizmob/open-files.js",
+  "author": "Shiz <hi@shiz.me>",
+  "contributors": ["Eren Okka <erenokka@gmail.com>"],
+  "license": "MIT",
+  "dependencies": {
+    "bindings": "^1.3.0"
+  }
+}
