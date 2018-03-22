@@ -21,7 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#include <iostream>
 #include <functional>
 #include <set>
 #include <string>
@@ -404,30 +403,9 @@ namespace win {
 
 }
 
-/*bool PrintFile(const OpenFile &f) {
-        std::cout << f.path << std::endl;
-        return true;
-}
-
-int main(int argc, char *argv[]) {
-        if (argc < 2) {
-                std::cerr << "usage: " << argv[0] << " PID" << std::endl;
-                return 1;
-        }
-
-        std::set<DWORD> pids;
-        pids.insert(atoi(argv[1]));
-        if (!EnumerateOpenFiles(pids, PrintFile)) {
-                std::cerr << "could not get open files" << std::endl;
-                return 2;
-        }
-
-        return 0;
-}*/
 
 void GetOpenFiles(const v8::FunctionCallbackInfo<v8::Value>& args) {
-        v8::Isolate* isolate = v8::Isolate::GetCurrent();
-        v8::HandleScope scope(isolate);
+        v8::Isolate* isolate = args.GetIsolate();
 
         if (args.Length() < 1 || !args[0]->isNumber()) {
                 isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong arguments")));
@@ -439,10 +417,11 @@ void GetOpenFiles(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
         std::set<v8::Local<v8::String>> files;
         bool success = EnumerateOpenFiles(pids, [](const OpenFile &f) {
-                char buf[PATH_MAX];
+                char buf[MAX_PATH];
                 const wchar_t *mem = f.path.c_str();
-                wcstombs(buf, mem, wcslen(mem));
-                files.insert(v8::String::New(buf));
+                if (WideCharToMultiByte(CP_UTF8, 0, mem, -1, buf, sizeof(buf), NULL, NULL)) {
+                        files.insert(v8::String::NewFromUtf8(isolate, buf));
+                }
                 return true;
         });
         
@@ -454,12 +433,12 @@ void GetOpenFiles(const v8::FunctionCallbackInfo<v8::Value>& args) {
                 }
                 args.GetReturnValue().Set(ret);
         } else {
-                args.GetReturnValue().Set(v8::Null());
+                args.GetReturnValue().Set(v8::Null(isolate));
         }
 }
 
-void Init(v8::Handle<v8::Object> exports) {
+void Init(v8::Local<v8::Object> exports) {
         NODE_SET_METHOD(exports, "getOpenFiles", GetOpenFiles);
 }
 
-NODE_MODULE(open_files_win32, Init);
+NODE_MODULE(NODE_GYP_MODULE_NAME, Init);
