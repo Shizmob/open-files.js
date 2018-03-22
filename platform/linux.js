@@ -24,7 +24,9 @@ function getOpenFiles(pid, cb) {
 	fs.readdir(base, (err, files) => {
 		if (err)
 			return cb(err, []);
-		mapCallback(files, (f, cb) => fs.readlink(path.join(base, f), cb), cb);
+		mapCallback(files,
+			(f, next) => fs.readlink(path.join(base, f), next),
+			cb, { ignoreErrors: true });
 	});
 }
 
